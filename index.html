@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>어린이 글씨 연습장</title>
+  <!-- 가독성이 높고 단정한 폰트 로드 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Noto Sans KR', sans-serif;
+      user-select: none;
+    }
+
+    body {
+      background-color: #f8fafc;
+      color: #334155;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* 상단 헤더 및 입력 패널 */
+    header {
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      color: #1e293b;
+      margin-bottom: 12px;
+    }
+
+    .control-panel {
+      background: #ffffff;
+      padding: 16px 20px;
+      border-radius: 14px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      border: 1px solid #e2e8f0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .input-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-grow: 1;
+    }
+
+    input[type="text"] {
+      padding: 10px 14px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      flex-grow: 1;
+      max-width: 320px;
+      color: #1e293b;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus {
+      border-color: #3b82f6;
+    }
+
+    button {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .btn-apply {
+      background-color: #3b82f6;
+      color: #ffffff;
+    }
+
+    .btn-apply:hover {
+      background-color: #2563eb;
+    }
+
+    .btn-clear {
+      background-color: #f1f5f9;
+      color: #475569;
+    }
+
+    .btn-clear:hover {
+      background-color: #e2e8f0;
+    }
+
+    /* 도구 바 (펜 색상 및 두께) */
+    .tools {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .color-picker {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .color-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.1s;
+    }
+
+    .color-dot.active {
+      border-color: #0f172a;
+      transform: scale(1.15);
+    }
+
+    /* 메인 글씨 연습 그리드 영역 */
+    .practice-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+    }
+
+    .practice-card {
+      background-color: #ffffff;
+      border: 2px solid #cbd5e1;
+      border-radius: 12px;
+      position: relative;
+      aspect-ratio: 1;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    /* 십자 점선 보조선 */
+    .guideline-horizontal,
+    .guideline-vertical {
+      position: absolute;
+      pointer-events: none;
+    }
+
+    .guideline-horizontal {
+      top: 50%;
+      left: 0;
+      right: 0;
+      border-top: 1.5px dashed #e2e8f0;
+    }
+
+    .guideline-vertical {
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      border-left: 1.5px dashed #e2e8f0;
+    }
+
+    /* 밑글자 (가이드 글자) */
+    .guide-text {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 5.5rem;
+      color: #cbd5e1;
+      font-weight: 700;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* 캔버스 */
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>✏️ 어린이 글씨 연습장</h1>
+    </header>
+
+    <div class="control-panel">
+      <div class="input-group">
+        <input type="text" id="textInput" placeholder="연습할 글자를 입력하세요" value="가나다">
+        <button class="btn-apply" id="updateBtn">글자 바꾸기</button>
+      </div>
+
+      <div class="tools">
+        <div class="color-picker" id="colorPicker">
+          <div class="color-dot active" style="background-color: #2563eb;" data-color="#2563eb"></div>
+          <div class="color-dot" style="background-color: #dc2626;" data-color="#dc2626"></div>
+          <div class="color-dot" style="background-color: #16a34a;" data-color="#16a34a"></div>
+          <div class="color-dot" style="background-color: #1e293b;" data-color="#1e293b"></div>
+        </div>
+        <button class="btn-clear" id="clearAllBtn">모두 지우기</button>
+      </div>
+    </div>
+
+    <!-- 글씨 칸이 생성되는 컨테이너 -->
+    <div class="practice-grid" id="practiceGrid"></div>
+  </div>
+
+  <script>
+    const textInput = document.getElementById('textInput');
+    const updateBtn = document.getElementById('updateBtn');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    const practiceGrid = document.getElementById('practiceGrid');
+    const colorPicker = document.getElementById('colorPicker');
+
+    let currentColor = '#2563eb';
+    const strokeWidth = 10;
+
+    // 색상 팔레트 선택 이벤트
+    colorPicker.addEventListener('click', (e) => {
+      if (e.target.classList.contains('color-dot')) {
+        document.querySelectorAll('.color-dot').forEach(dot => dot.classList.remove('active'));
+        e.target.classList.add('active');
+        currentColor = e.target.dataset.color;
+      }
+    });
+
+    // 글자 카드 생성 함수
+    function createPracticeCards() {
+      practiceGrid.innerHTML = '';
+      const text = textInput.value.trim() || '가';
+
+      // 입력된 문자들을 한 글자씩 쪼개서 카드 생성
+      Array.from(text).forEach((char) => {
+        const card = document.createElement('div');
+        card.className = 'practice-card';
+
+        // 십자 보조선
+        const guideH = document.createElement('div');
+        guideH.className = 'guideline-horizontal';
+        const guideV = document.createElement('div');
+        guideV.className = 'guideline-vertical';
+
+        // 따라 쓰는 연한 글자
+        const guideText = document.createElement('div');
+        guideText.className = 'guide-text';
+        guideText.textContent = char;
+
+        // 드로잉용 캔버스
+        const canvas = document.createElement('canvas');
+
+        card.appendChild(guideH);
+        card.appendChild(guideV);
+        card.appendChild(guideText);
+        card.appendChild(canvas);
+        practiceGrid.appendChild(card);
+
+        setupCanvas(canvas);
+      });
+    }
+
+    // 캔버스 드로잉 로직 설정 함수
+    function setupCanvas(canvas) {
+      const ctx = canvas.getContext('2d');
+
+      // 해상도 왜곡 방지를 위해 캔버스 실제 크기 동기화
+      function resizeCanvas() {
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * window.devicePixelRatio;
+        canvas.height = rect.height * window.devicePixelRatio;
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      }
+
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+
+      let isDrawing = false;
+      let lastX = 0;
+      let lastY = 0;
+
+      function getCoords(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return {
+          x: clientX - rect.left,
+          y: clientY - rect.top
+        };
+      }
+
+      function startDrawing(e) {
+        isDrawing = true;
+        const { x, y } = getCoords(e);
+        lastX = x;
+        lastY = y;
+        // 단일 클릭 점 찍기
+        ctx.beginPath();
+        ctx.arc(x, y, strokeWidth / 2, 0, Math.PI * 2);
+        ctx.fillStyle = currentColor;
+        ctx.fill();
+      }
+
+      function draw(e) {
+        if (!isDrawing) return;
+        e.preventDefault();
+
+        const { x, y } = getCoords(e);
+
+        ctx.strokeStyle = currentColor;
+        ctx.lineWidth = strokeWidth;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+
+        lastX = x;
+        lastY = y;
+      }
+
+      function stopDrawing() {
+        isDrawing = false;
+      }
+
+      // 마우스 이벤트
+      canvas.addEventListener('mousedown', startDrawing);
+      canvas.addEventListener('mousemove', draw);
+      window.addEventListener('mouseup', stopDrawing);
+
+      // 모바일 / 태블릿 터치 이벤트
+      canvas.addEventListener('touchstart', startDrawing, { passive: false });
+      canvas.addEventListener('touchmove', draw, { passive: false });
+      window.addEventListener('touchend', stopDrawing);
+    }
+
+    // 전체 지우기 기능
+    clearAllBtn.addEventListener('click', () => {
+      const canvases = document.querySelectorAll('canvas');
+      canvases.forEach(canvas => {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      });
+    });
+
+    // 엔터키 또는 버튼 클릭 시 글자 적용
+    updateBtn.addEventListener('click', createPracticeCards);
+    textInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        createPracticeCards();
+      }
+    });
+
+    // 초기 실행
+    createPracticeCards();
+  </script>
+</body>
+</html>
